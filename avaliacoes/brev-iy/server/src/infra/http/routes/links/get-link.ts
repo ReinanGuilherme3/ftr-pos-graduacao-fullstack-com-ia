@@ -1,20 +1,22 @@
-import { DeleteLink } from '@/app/functions/links/delete'
+import { GetLink } from '@/app/functions/links/get-link'
 import { isRight, unwrapEither } from '@/infra/shared/either'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
-export const deleteLinkRoute: FastifyPluginAsyncZod = async server => {
-  server.delete(
-    '/links/:id',
+export const getLinkRoute: FastifyPluginAsyncZod = async server => {
+  server.get(
+    '/links',
     {
       schema: {
-        summary: 'Delete a link',
+        summary: 'Get the original link by the shortened link',
         tags: ['links'],
-        params: z.object({
-          id: z.uuidv7(),
+        querystring: z.object({
+          linkEncurtado: z.url(),
         }),
         response: {
-          204: z.null().describe('Link deleted successfully.'),
+          200: z
+            .object({ id: z.string(), linkOriginal: z.string() })
+            .describe('Link found.'),
           404: z
             .object({ message: z.string() })
             .describe('Link not found.'),
@@ -22,12 +24,12 @@ export const deleteLinkRoute: FastifyPluginAsyncZod = async server => {
       },
     },
     async (request, reply) => {
-      const { id } = request.params
+      const { linkEncurtado } = request.query
 
-      const result = await DeleteLink({ id })
+      const result = await GetLink({ linkEncurtado })
 
       if (isRight(result)) {
-        return reply.status(204).send(null)
+        return reply.status(200).send(result.right)
       }
 
       const error = unwrapEither(result)

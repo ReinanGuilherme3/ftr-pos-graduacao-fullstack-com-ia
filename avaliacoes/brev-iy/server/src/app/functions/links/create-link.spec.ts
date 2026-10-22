@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { CreateLink } from '@/app/functions/links/create'
+import { CreateLink } from '@/app/functions/links/create-link'
 import { LinkAlreadyExists } from '@/app/functions/links/errors/link-already-exists'
 import { db } from '@/infra/db'
 import { schema } from '@/infra/db/schemas'

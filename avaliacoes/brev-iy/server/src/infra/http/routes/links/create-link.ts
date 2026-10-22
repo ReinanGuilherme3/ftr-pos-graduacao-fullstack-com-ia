@@ -1,4 +1,4 @@
-import { CreateLink } from '@/app/functions/links/create'
+import { CreateLink } from '@/app/functions/links/create-link'
 import { isRight, unwrapEither } from '@/infra/shared/either'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'

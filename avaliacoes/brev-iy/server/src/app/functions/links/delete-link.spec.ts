@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { CreateLink } from '@/app/functions/links/create'
-import { DeleteLink } from '@/app/functions/links/delete'
+import { CreateLink } from '@/app/functions/links/create-link'
+import { DeleteLink } from '@/app/functions/links/delete-link'
 import { LinkNotFound } from '@/app/functions/links/errors/link-not-found'
 import { db } from '@/infra/db'
 import { schema } from '@/infra/db/schemas'
