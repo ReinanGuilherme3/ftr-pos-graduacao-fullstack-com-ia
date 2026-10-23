@@ -8,6 +8,7 @@ type GetLinksOutput = {
     id: string
     linkOriginal: string
     linkEncurtado: string
+    quantidadeAcessos: number
     criadoEm: Date
   }[]
 }
@@ -18,6 +19,7 @@ export async function GetLinks(): Promise<Either<never, GetLinksOutput>> {
       id: schema.links.id,
       linkOriginal: schema.links.linkOriginal,
       linkEncurtado: schema.links.linkEncurtado,
+      quantidadeAcessos: schema.links.quantidadeAcessos,
       criadoEm: schema.links.criadoEm,
     })
     .from(schema.links)
