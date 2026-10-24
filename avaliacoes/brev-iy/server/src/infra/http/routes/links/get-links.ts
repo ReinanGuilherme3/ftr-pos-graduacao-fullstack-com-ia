@@ -8,8 +8,12 @@ export const getLinksRoute: FastifyPluginAsyncZod = async server => {
     '/links/all',
     {
       schema: {
-        summary: 'Get all links',
+        summary: 'Get links with cursor pagination',
         tags: ['links'],
+        querystring: z.object({
+          cursor: z.uuidv7().optional(),
+          pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
+        }),
         response: {
           200: z
             .object({
@@ -22,17 +26,20 @@ export const getLinksRoute: FastifyPluginAsyncZod = async server => {
                   criadoEm: z.date(),
                 })
               ),
+              nextCursor: z.string().nullable(),
             })
-            .describe('List of links.'),
+            .describe('Page of links.'),
         },
       },
     },
-    async (_request, reply) => {
-      const result = await GetLinks()
+    async (request, reply) => {
+      const { cursor, pageSize } = request.query
 
-      const { links } = unwrapEither(result)
+      const result = await GetLinks({ cursor, pageSize })
 
-      return reply.status(200).send({ links })
+      const { links, nextCursor } = unwrapEither(result)
+
+      return reply.status(200).send({ links, nextCursor })
     }
   )
 }
