@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file .env src/infra/http/server.ts",
+    "dev:development": "tsx watch --env-file .env.development src/infra/http/server.ts",
     "test": "dotenv -e .env.test -- vitest run",
     "test:watch": "dotenv -e .env.test -- vitest watch",
     "db:generate": "drizzle-kit generate",
