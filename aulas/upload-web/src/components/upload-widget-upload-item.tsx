@@ -1,173 +1,133 @@
-import { create } from "zustand";
-import { enableMapSet } from "immer";
-import { immer } from "zustand/middleware/immer";
-import { uploadFileToStorage } from "../http/upload-file-to-storage";
-import { CanceledError } from "axios";
-import { useShallow } from "zustand/shallow";
-import { compressImage } from "../utils/compress-image";
+import * as Progress from "@radix-ui/react-progress";
 
-export type Upload = {
-  name: string;
-  file: File;
-  abortController: AbortController;
-  status: "progress" | "success" | "error" | "canceled";
-  originalSizeInBytes: number;
-  compressedSizeInBytes?: number;
-  uploadSizeInBytes: number;
-  remoteUrl?: string;
-};
+import { Download, ImageUp, Link2, RefreshCcw, X } from "lucide-react";
+import { Button } from "./ui/button";
+import { motion } from "motion/react";
+import { type Upload, useUploads } from "../store/uploads";
+import { formatBytes } from "../utils/format-bytes";
 
-type UploadState = {
-  uploads: Map<string, Upload>;
-  addUploads: (files: File[]) => void;
-  cancelUpload: (uploadId: string) => void;
-};
+interface UploadWidgetUploadItemProps {
+  upload: Upload;
+  uploadId: string;
+}
 
-enableMapSet();
+export function UploadWidgetUploadItem({
+  upload,
+  uploadId,
+}: UploadWidgetUploadItemProps) {
+  const cancelUpload = useUploads((store) => store.cancelUpload);
 
-export const useUploads = create<UploadState, [["zustand/immer", never]]>(
-  immer((set, get) => {
-    function updateUpload(uploadId: string, data: Partial<Upload>) {
-      const upload = get().uploads.get(uploadId);
-
-      if (!upload) {
-        return;
-      }
-
-      set((state) => {
-        state.uploads.set(uploadId, {
-          ...upload,
-          ...data,
-        });
-      });
-    }
-
-    async function processUpload(uploadId: string) {
-      const upload = get().uploads.get(uploadId);
-
-      if (!upload) {
-        return;
-      }
-
-      try {
-        const compressedFile = await compressImage({
-          file: upload.file,
-          maxWidth: 1000,
-          maxHeight: 1000,
-          quality: 0.8,
-        });
-
-        updateUpload(uploadId, { compressedSizeInBytes: compressedFile.size });
-
-        const { url } = await uploadFileToStorage(
-          {
-            file: compressedFile,
-            onProgress(sizeInBytes) {
-              updateUpload(uploadId, {
-                uploadSizeInBytes: sizeInBytes,
-              });
-            },
-          },
-          { signal: upload.abortController.signal }
-        );
-
-        updateUpload(uploadId, {
-          status: "success",
-          remoteUrl: url,
-        });
-      } catch (err) {
-        if (err instanceof CanceledError) {
-          updateUpload(uploadId, {
-            status: "canceled",
-          });
-
-          return;
-        }
-
-        updateUpload(uploadId, {
-          status: "error",
-        });
-      }
-    }
-
-    function cancelUpload(uploadId: string) {
-      const upload = get().uploads.get(uploadId);
-
-      if (!upload) {
-        return;
-      }
-
-      upload.abortController.abort();
-
-      set((state) => {
-        state.uploads.set(uploadId, {
-          ...upload,
-          status: "canceled",
-        });
-      });
-    }
-
-    function addUploads(files: File[]) {
-      for (const file of files) {
-        const uploadId = crypto.randomUUID();
-        const abortController = new AbortController();
-
-        const upload: Upload = {
-          name: file.name,
-          file,
-          abortController,
-          status: "progress",
-          originalSizeInBytes: file.size,
-          uploadSizeInBytes: 0,
-        };
-
-        set((state) => {
-          state.uploads.set(uploadId, upload);
-        });
-
-        processUpload(uploadId);
-      }
-    }
-
-    return {
-      uploads: new Map(),
-      addUploads,
-      cancelUpload,
-    };
-  })
-);
-
-export const usePendingUploads = () => {
-  return useUploads(
-    useShallow((store) => {
-      const isThereAnyPendingUploads = Array.from(store.uploads.values()).some(
-        (upload) => upload.status === "progress"
-      );
-
-      if (!isThereAnyPendingUploads) {
-        return { isThereAnyPendingUploads, globalPercentage: 100 };
-      }
-
-      const { total, uploaded } = Array.from(store.uploads.values()).reduce(
-        (acc, upload) => {
-          if (upload.compressedSizeInBytes) {
-            acc.uploaded += upload.uploadSizeInBytes;
-          }
-
-          acc.total +=
-            upload.compressedSizeInBytes || upload.originalSizeInBytes;
-
-          return acc;
-        },
-        { total: 0, uploaded: 0 }
-      );
-
-      const globalPercentage = Math.min(
-        Math.round((uploaded * 100) / total),
-        100
-      );
-
-      return { isThereAnyPendingUploads, globalPercentage };
-    })
+  const progress = Math.min(
+    upload.compressedSizeInBytes
+      ? Math.round(
+        (upload.uploadSizeInBytes * 100) / upload.compressedSizeInBytes
+      )
+      : 0,
+    100
   );
-};
+
+  return (
+    <motion.div
+      className="p-3 rounded-lg flex flex-col gap-3 shadow-shape-content bg-white/2 relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: 1,
+      }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium flex items-center gap-1">
+          <ImageUp className="size-3 text-zinc-300" strokeWidth={1.5} />
+          <span>{upload.name}</span>
+        </span>
+
+        <span className="text-xxs text-zinc-400 flex gap-1.5 items-center">
+          <span className="line-through">
+            {formatBytes(upload.originalSizeInBytes)}
+          </span>
+          <div className="size-1 rounded-full bg-zinc-700" />
+          <span>
+            {formatBytes(upload.compressedSizeInBytes ?? 0)}
+            {upload.compressedSizeInBytes && (
+              <span className="text-green-400 ml-1">
+                -
+                {Math.round(
+                  ((upload.originalSizeInBytes - upload.compressedSizeInBytes) *
+                    100) /
+                  upload.originalSizeInBytes
+                )}
+                %
+              </span>
+            )}
+          </span>
+          <div className="size-1 rounded-full bg-zinc-700" />
+
+          {upload.status === "success" && <span>100%</span>}
+          {upload.status === "progress" && <span>{progress}%</span>}
+          {upload.status === "error" && (
+            <span className="text-red-400">Error</span>
+          )}
+          {upload.status === "canceled" && (
+            <span className="text-yellow-400">Canceled</span>
+          )}
+        </span>
+      </div>
+
+      <Progress.Root
+        value={progress}
+        data-status={upload.status}
+        className="bg-zinc-800 rounded-full h-1 overflow-hidden group"
+      >
+        <Progress.Indicator
+          className="bg-indigo-500 h-1 group-data-[status=success]:bg-green-400 group-data-[status=error]:bg-red-400 group-data-[status=canceled]:bg-yellow-400 transition-all"
+          style={{
+            width: upload.status === "progress" ? `${progress}%` : "100%",
+          }}
+        />
+      </Progress.Root>
+
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        <Button
+          size="icon-sm"
+          aria-disabled={upload.status !== "success"}
+          asChild
+        >
+          {/* A URL é de outra origem (R2), então o navegador ignora o atributo
+              download; abrimos em nova aba para não sair do widget. */}
+          <a href={upload.remoteUrl} target="_blank" rel="noreferrer" download>
+            <Download className="size-4" strokeWidth={1.5} />
+            <span className="sr-only">Download compressed image</span>
+          </a>
+        </Button>
+
+        <Button
+          size="icon-sm"
+          disabled={!upload.remoteUrl}
+          onClick={() =>
+            upload.remoteUrl && navigator.clipboard.writeText(upload.remoteUrl)
+          }
+        >
+          <Link2 className="size-4" strokeWidth={1.5} />
+          <span className="sr-only">Copy remote URL</span>
+        </Button>
+
+        <Button
+          disabled={!["canceled", "error"].includes(upload.status)}
+          size="icon-sm"
+        >
+          <RefreshCcw className="size-4" strokeWidth={1.5} />
+          <span className="sr-only">Retry upload</span>
+        </Button>
+
+        <Button
+          disabled={upload.status !== "progress"}
+          size="icon-sm"
+          onClick={() => cancelUpload(uploadId)}
+        >
+          <X className="size-4" strokeWidth={1.5} />
+          <span className="sr-only">Cancel upload</span>
+        </Button>
+      </div>
+    </motion.div>
+  );
+}

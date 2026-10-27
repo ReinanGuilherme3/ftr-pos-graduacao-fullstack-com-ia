@@ -46,7 +46,9 @@ export const uploadImageRoute: FastifyPluginAsyncZod = async server => {
       } catch (error) {
         // O web cancela o upload via AbortController: a conexão é fechada no
         // meio do envio e o stream do arquivo quebra. Não é um erro do servidor.
-        if (request.raw.destroyed) {
+        // `complete` só fica false se o corpo não chegou inteiro; `destroyed`
+        // não serve, pois o Node destrói o request ao terminar de ler o corpo.
+        if (!request.raw.complete) {
           return reply.status(499).send({ message: 'Upload canceled by client.' })
         }
 
