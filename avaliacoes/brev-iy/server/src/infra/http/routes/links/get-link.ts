@@ -1,4 +1,5 @@
 import { GetLink } from '@/app/functions/links/get-link'
+import { linkEncurtadoSchema } from '@/app/functions/links/schemas/link-encurtado'
 import { isRight, unwrapEither } from '@/infra/shared/either'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -11,7 +12,7 @@ export const getLinkRoute: FastifyPluginAsyncZod = async server => {
         summary: 'Get the original link by the shortened link',
         tags: ['links'],
         querystring: z.object({
-          linkEncurtado: z.url(),
+          linkEncurtado: linkEncurtadoSchema,
         }),
         response: {
           200: z

@@ -1,4 +1,5 @@
 import { CreateLink } from '@/app/functions/links/create-link'
+import { linkEncurtadoSchema } from '@/app/functions/links/schemas/link-encurtado'
 import { isRight, unwrapEither } from '@/infra/shared/either'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -12,7 +13,7 @@ export const createLinkRoute: FastifyPluginAsyncZod = async server => {
         tags: ['links'],
         body: z.object({
           linkOriginal: z.url(),
-          linkEncurtado: z.url(),
+          linkEncurtado: linkEncurtadoSchema,
         }),
         response: {
           201: z

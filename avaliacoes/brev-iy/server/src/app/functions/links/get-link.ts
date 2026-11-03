@@ -1,12 +1,13 @@
 import { z } from 'zod'
 import { LinkNotFound } from './errors/link-not-found'
+import { linkEncurtadoSchema } from './schemas/link-encurtado'
 import { Either, makeLeft, makeRight } from '@/infra/shared/either'
 import { db } from '@/infra/db'
 import { schema } from '@/infra/db/schemas'
 import { eq } from 'drizzle-orm'
 
 const getLinkInput = z.object({
-  linkEncurtado: z.url(),
+  linkEncurtado: linkEncurtadoSchema,
 })
 
 type GetLinkInput = z.input<typeof getLinkInput>

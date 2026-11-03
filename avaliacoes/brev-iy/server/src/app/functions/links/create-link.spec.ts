@@ -87,4 +87,19 @@ describe('create link', () => {
 
     expect(result).toHaveLength(0)
   })
+
+  it.each([
+    'https://brev.ly/Link-Maiusculo',
+    'https://brev.ly/link%20com%20espaco',
+    'https://brev.ly/link_especial!',
+    'https://brev.ly/dois/segmentos',
+    'https://brev.ly/',
+  ])('should not be able to create a link with an invalid slug (%s)', async linkEncurtado => {
+    await expect(
+      CreateLink({
+        linkOriginal: 'https://www.google.com',
+        linkEncurtado,
+      }),
+    ).rejects.toBeInstanceOf(ZodError)
+  })
 })

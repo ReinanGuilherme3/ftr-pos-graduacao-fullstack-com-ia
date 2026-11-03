@@ -33,7 +33,7 @@ export async function uploadFileToStorage(input: UploadFileToStorageInput) {
     client: r2,
     params: {
       Key: uniqueFileName,
-      Bucket: env.CLOUDFLARE_BUCKET_NAME,
+      Bucket: env.CLOUDFLARE_BUCKET,
       Body: contentStream,
       ContentType: contentType,
     },
@@ -43,6 +43,6 @@ export async function uploadFileToStorage(input: UploadFileToStorageInput) {
 
   return {
     key: uniqueFileName,
-    url: new URL(uniqueFileName, env.CLOUDFLARE_BUCKET_URL).toString(),
+    url: new URL(uniqueFileName, env.CLOUDFLARE_PUBLIC_URL).toString(),
   }
 }

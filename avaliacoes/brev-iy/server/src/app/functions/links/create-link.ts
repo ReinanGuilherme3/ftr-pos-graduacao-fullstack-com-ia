@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { LinkAlreadyExists } from './errors/link-already-exists'
+import { linkEncurtadoSchema } from './schemas/link-encurtado'
 import { Either, makeLeft, makeRight } from '@/infra/shared/either'
 import { db } from '@/infra/db'
 import { schema } from '@/infra/db/schemas'
@@ -7,7 +8,7 @@ import { eq } from 'drizzle-orm'
 
 const createLinkInput = z.object({
   linkOriginal: z.url(),
-  linkEncurtado: z.url(),
+  linkEncurtado: linkEncurtadoSchema,
 })
 
 type CreateLinkInput = z.input<typeof createLinkInput>
